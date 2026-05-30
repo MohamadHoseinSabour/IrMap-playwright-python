@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">داشبورد بومی‌سازی نقشه | Map Localization Dashboard</title>
+    
+    <!-- Google Fonts for Outfit (EN) and Vazirmatn (FA) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet.js CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Control Panel -->
+        <aside class="sidebar">
+            <header class="sidebar-header">
+                <div class="logo-area">
+                    <span class="logo-icon">🗺️</span>
+                    <h1 id="app-heading">سامانه مکان‌یاب</h1>
+                </div>
+                <!-- Language Toggle Button -->
+                <button id="lang-btn" class="lang-toggle-btn" aria-label="Toggle Language">
+                    <span class="lang-icon">🌐</span>
+                    <span class="lang-text">English</span>
+                </button>
+            </header>
+            
+            <div class="sidebar-scroll-content">
+                <!-- Map Provider Selector Section -->
+                <section class="control-card">
+                    <h2 class="section-title" id="provider-title">انتخاب سرویس نقشه</h2>
+                    <div class="provider-selector">
+                        <label class="provider-option" id="label-google">
+                            <input type="radio" name="map-provider" value="google" checked>
+                            <div class="option-btn">
+                                <span class="provider-icon">🌐</span>
+                                <span class="provider-name">Google Maps</span>
+                            </div>
+                        </label>
+                        <label class="provider-option" id="label-neshan">
+                            <input type="radio" name="map-provider" value="neshan">
+                            <div class="option-btn">
+                                <span class="provider-icon"> نشان</span>
+                                <span class="provider-name">نقشه نشان</span>
+                            </div>
+                        </label>
+                        <label class="provider-option" id="label-balad">
+                            <input type="radio" name="map-provider" value="balad">
+                            <div class="option-btn">
+                                <span class="provider-icon"> بلد</span>
+                                <span class="provider-name">نقشه بلد</span>
+                            </div>
+                        </label>
+                    </div>
+                </section>
+                
+                <!-- Business Search & Filters Section -->
+                <section class="control-card">
+                    <h2 class="section-title" id="filter-title">جستجو و فیلتر کسب‌وکارها</h2>
+                    
+                    <div class="search-box">
+                        <input type="text" id="search-input" placeholder="نام کسب‌وکار را جستجو کنید...">
+                        <span class="search-icon">🔍</span>
+                    </div>
+                    
+                    <div class="category-filters">
+                        <button class="cat-btn active" data-category="all" id="cat-all">همه</button>
+                        <button class="cat-btn" data-category="restaurant" id="cat-restaurant">رستوران</button>
+                        <button class="cat-btn" data-category="cafe" id="cat-cafe">کافه</button>
+                        <button class="cat-btn" data-category="hospital" id="cat-hospital">بیمارستان</button>
+                    </div>
+                    
+                    <div class="rating-filter">
+                        <span class="filter-label" id="rating-label">حداقل امتیاز:</span>
+                        <div class="stars-select">
+                            <button class="star-btn" data-rating="1">★</button>
+                            <button class="star-btn" data-rating="2">★</button>
+                            <button class="star-btn" data-rating="3">★</button>
+                            <button class="star-btn" data-rating="4">★</button>
+                            <button class="star-btn" data-rating="5">★</button>
+                        </div>
+                        <button id="clear-filters-btn" class="clear-btn">پاک کردن فیلترها</button>
+                    </div>
+                </section>
+                
+                <!-- Results List Section -->
+                <section class="control-card results-section">
+                    <div class="results-header">
+                        <h2 class="section-title" id="results-title">نتایج جستجو</h2>
+                        <span id="results-count" class="badge">۰ نتیجه</span>
+                    </div>
+                    <div id="business-list" class="business-list">
+                        <!-- Business items will be dynamically injected here -->
+                    </div>
+                </section>
+            </div>
+            
+            <footer class="sidebar-footer">
+                <p id="footer-text">نسخه دمو بومی‌سازی خدمات نقشه ایران</p>
+            </footer>
+        </aside>
+        
+        <!-- Main Map Area -->
+        <main class="map-area">
+            <!-- Floating Map Status Bar -->
+            <div class="map-status-overlay">
+                <div class="status-indicator">
+                    <span class="status-dot green"></span>
+                    <span id="status-text">موتور نقشه فعال: Google Maps</span>
+                </div>
+                <div id="coordinates-display" class="coordinates-display">
+                    ۳۵.۶۹۹۷° N, ۵۱.۳۳۸۰° E
+                </div>
+            </div>
+            
+            <div id="map" class="map-container"></div>
+        </main>
+    </div>
+    
+    <!-- Leaflet.js JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- Application Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
