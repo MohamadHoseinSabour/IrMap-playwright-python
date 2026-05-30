@@ -116,6 +116,50 @@ def run_tests():
         page.screenshot(path=screenshot_5)
         print(f"Captured: {screenshot_5}")
         
+        # --- TEST 6: Map Bounds Filtering ---
+        print("[TEST 6] Testing Map Bounds Filtering...")
+        # Clear search input first
+        page.fill("#search-input", "")
+        time.sleep(0.5)
+        
+        # Get count of all businesses
+        all_count_text = page.locator("#results-count").text_content()
+        print("All businesses count read successfully.")
+        
+        # Enable bounds filter by clicking the visible slider element (which toggles the hidden input)
+        page.click(".bounds-filter .slider")
+        time.sleep(1) # wait for map bounds calculations
+        
+        bounds_count_text = page.locator("#results-count").text_content()
+        print("Businesses count within current bounds read successfully.")
+        # With bounds toggle checked, the count should be smaller than total (30)
+        assert bounds_count_text != all_count_text, "Expected bounds filter to reduce business count"
+        
+        screenshot_6 = os.path.join(SCREENSHOTS_DIR, "6_bounds_filtering.png")
+        page.screenshot(path=screenshot_6)
+        print(f"Captured: {screenshot_6}")
+        
+        # Disable bounds filter (click the slider again to untoggle)
+        page.click(".bounds-filter .slider")
+        time.sleep(0.5)
+        
+        # --- TEST 7: Search Radius Filtering & Export Buttons ---
+        print("[TEST 7] Testing Search Radius Filtering & Export buttons...")
+        # Select 3 km radius
+        page.select_option("#radius-select", "3000")
+        time.sleep(1)
+        
+        radius_count_text = page.locator("#results-count").text_content()
+        print("Businesses within 3km radius read successfully.")
+        
+        # Verify export buttons are visible
+        assert page.is_visible("#export-csv-btn"), "CSV Export button is not visible"
+        assert page.is_visible("#export-json-btn"), "JSON Export button is not visible"
+        
+        screenshot_7 = os.path.join(SCREENSHOTS_DIR, "7_radius_filtering.png")
+        page.screenshot(path=screenshot_7)
+        print(f"Captured: {screenshot_7}")
+        
         # Clean up
         browser.close()
         

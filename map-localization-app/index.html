@@ -88,6 +88,27 @@
                         </div>
                         <button id="clear-filters-btn" class="clear-btn">پاک کردن فیلترها</button>
                     </div>
+
+                    <!-- Map Bounds Toggle -->
+                    <div class="bounds-filter">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="bounds-toggle">
+                            <span class="slider"></span>
+                        </label>
+                        <span id="map-bounds-label" class="filter-label-text">جستجو فقط در محدوده نقشه</span>
+                    </div>
+
+                    <!-- Search Radius Selector -->
+                    <div class="radius-filter">
+                        <span id="radius-label-select" class="filter-label">شعاع جستجو:</span>
+                        <select id="radius-select" class="radius-dropdown">
+                            <option value="unlimited" id="opt-radius-unlimited" selected>نامحدود</option>
+                            <option value="1000">۱ کیلومتر</option>
+                            <option value="3000">۳ کیلومتر</option>
+                            <option value="5000">۵ کیلومتر</option>
+                            <option value="10000">۱۰ کیلومتر</option>
+                        </select>
+                    </div>
                 </section>
                 
                 <!-- Results List Section -->
@@ -95,6 +116,10 @@
                     <div class="results-header">
                         <h2 class="section-title" id="results-title">نتایج جستجو</h2>
                         <span id="results-count" class="badge">۰ نتیجه</span>
+                    </div>
+                    <div class="export-actions">
+                        <button id="export-csv-btn" class="export-btn">خروجی CSV</button>
+                        <button id="export-json-btn" class="export-btn">خروجی JSON</button>
                     </div>
                     <div id="business-list" class="business-list">
                         <!-- Business items will be dynamically injected here -->
