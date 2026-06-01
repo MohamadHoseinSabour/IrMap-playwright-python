@@ -3,156 +3,282 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="page-title">داشبورد بومی‌سازی نقشه | Map Localization Dashboard</title>
-    
-    <!-- Google Fonts for Outfit (EN) and Vazirmatn (FA) -->
+    <title id="page-title">BizFinder Pro | استخراج اطلاعات کسب‌وکار</title>
+    <meta name="description" content="ابزار حرفه‌ای استخراج لیست کامل اطلاعات تماس، آدرس و وب‌سایت کسب‌وکارها از نقشه با خروجی CSV">
+
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Leaflet.js CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Leaflet.js CSS (local) -->
+    <link rel="stylesheet" href="leaflet.css" />
+
     <!-- Custom Style -->
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- CSV Preview Modal -->
+    <div id="csv-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2 id="modal-title" class="modal-title">
+                    <span class="modal-title-icon">📋</span>
+                    <span id="modal-title-text">پیش‌نمایش خروجی CSV</span>
+                </h2>
+                <button id="modal-close-btn" class="modal-close" aria-label="بستن">✕</button>
+            </div>
+            <div class="modal-stats" id="modal-stats"></div>
+            <div class="modal-table-wrap">
+                <table id="csv-preview-table" class="csv-table">
+                    <thead id="csv-thead"></thead>
+                    <tbody id="csv-tbody"></tbody>
+                </table>
+            </div>
+            <div class="modal-actions">
+                <button id="modal-download-csv" class="btn-primary">
+                    <span>⬇️</span> <span id="modal-dl-csv-text">دانلود CSV</span>
+                </button>
+                <button id="modal-download-json" class="btn-secondary">
+                    <span>⬇️</span> <span id="modal-dl-json-text">دانلود JSON</span>
+                </button>
+                <button id="modal-cancel" class="btn-ghost">
+                    <span id="modal-cancel-text">انصراف</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
     <div class="app-container">
-        <!-- Sidebar Control Panel -->
-        <aside class="sidebar">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <!-- Header -->
             <header class="sidebar-header">
                 <div class="logo-area">
-                    <span class="logo-icon">🗺️</span>
-                    <h1 id="app-heading">سامانه مکان‌یاب</h1>
+                    <div class="logo-badge">
+                        <span class="logo-icon">🔍</span>
+                    </div>
+                    <div class="logo-text">
+                        <h1 id="app-heading">BizFinder Pro</h1>
+                        <span id="app-tagline" class="app-tagline">استخراج هوشمند کسب‌وکار</span>
+                    </div>
                 </div>
-                <!-- Language Toggle Button -->
                 <button id="lang-btn" class="lang-toggle-btn" aria-label="Toggle Language">
                     <span class="lang-icon">🌐</span>
                     <span class="lang-text">English</span>
                 </button>
             </header>
-            
+
             <div class="sidebar-scroll-content">
-                <!-- Map Provider Selector Section -->
-                <section class="control-card">
-                    <h2 class="section-title" id="provider-title">انتخاب سرویس نقشه</h2>
-                    <div class="provider-selector">
-                        <label class="provider-option" id="label-google">
-                            <input type="radio" name="map-provider" value="google" checked>
-                            <div class="option-btn">
-                                <span class="provider-icon">🌐</span>
-                                <span class="provider-name">Google Maps</span>
-                            </div>
-                        </label>
-                        <label class="provider-option" id="label-neshan">
-                            <input type="radio" name="map-provider" value="neshan">
-                            <div class="option-btn">
-                                <span class="provider-icon"> نشان</span>
-                                <span class="provider-name">نقشه نشان</span>
-                            </div>
-                        </label>
-                        <label class="provider-option" id="label-balad">
-                            <input type="radio" name="map-provider" value="balad">
-                            <div class="option-btn">
-                                <span class="provider-icon"> بلد</span>
-                                <span class="provider-name">نقشه بلد</span>
-                            </div>
-                        </label>
+
+                <!-- Search Engine Section -->
+                <section class="control-card search-engine-card">
+                    <div class="section-header">
+                        <h2 class="section-title" id="search-engine-title">
+                            <span class="section-icon">🔎</span>
+                            <span id="search-engine-label">جستجوی زنده روی نقشه</span>
+                        </h2>
+                        <div class="source-badge" id="source-badge">Overpass API</div>
                     </div>
-                </section>
-                
-                <!-- Business Search & Filters Section -->
-                <section class="control-card">
-                    <h2 class="section-title" id="filter-title">جستجو و فیلتر کسب‌وکارها</h2>
-                    
+
+                    <!-- Keyword Search -->
                     <div class="search-box">
-                        <input type="text" id="search-input" placeholder="نام کسب‌وکار را جستجو کنید...">
-                        <span class="search-icon">🔍</span>
+                        <input type="text" id="keyword-input" placeholder="کلیدواژه: پزشک، آرایشگاه، کافه..." autocomplete="off">
+                        <span class="search-icon" id="search-icon-text">🔍</span>
                     </div>
-                    
-                    <div class="category-filters">
-                        <button class="cat-btn active" data-category="all" id="cat-all">همه</button>
-                        <button class="cat-btn" data-category="restaurant" id="cat-restaurant">رستوران</button>
-                        <button class="cat-btn" data-category="cafe" id="cat-cafe">کافه</button>
-                        <button class="cat-btn" data-category="hospital" id="cat-hospital">بیمارستان</button>
+
+                    <!-- Category Chips -->
+                    <div class="cat-chips-label" id="quick-cats-label">دسته‌بندی سریع:</div>
+                    <div class="cat-chips" id="cat-chips">
+                        <button class="chip active" data-osm="amenity=restaurant" data-cat="restaurant" id="chip-restaurant">🍽️ رستوران</button>
+                        <button class="chip" data-osm="amenity=cafe" data-cat="cafe" id="chip-cafe">☕ کافه</button>
+                        <button class="chip" data-osm="amenity=hospital" data-cat="hospital" id="chip-hospital">🏥 بیمارستان</button>
+                        <button class="chip" data-osm="amenity=pharmacy" data-cat="pharmacy" id="chip-pharmacy">💊 داروخانه</button>
+                        <button class="chip" data-osm="amenity=dentist" data-cat="dentist" id="chip-dentist">🦷 دندانپزشک</button>
+                        <button class="chip" data-osm="shop=mobile_phone" data-cat="mobile" id="chip-mobile">📱 موبایل</button>
+                        <button class="chip" data-osm="tourism=hotel" data-cat="hotel" id="chip-hotel">🏨 هتل</button>
+                        <button class="chip" data-osm="shop=supermarket" data-cat="supermarket" id="chip-supermarket">🛒 سوپرمارکت</button>
+                        <button class="chip" data-osm="amenity=bank" data-cat="bank" id="chip-bank">🏦 بانک</button>
+                        <button class="chip" data-osm="amenity=gym" data-cat="gym" id="chip-gym">💪 باشگاه</button>
+                        <button class="chip" data-osm="shop=beauty" data-cat="beauty" id="chip-beauty">💇 آرایشگاه</button>
+                        <button class="chip" data-osm="amenity=school" data-cat="school" id="chip-school">🏫 مدرسه</button>
                     </div>
-                    
+
+                    <!-- Map Provider -->
+                    <div class="map-provider-row">
+                        <span class="filter-label" id="map-provider-label">نقشه:</span>
+                        <div class="provider-tabs" id="provider-tabs">
+                            <button class="provider-tab active" data-provider="google" id="tab-google">Google</button>
+                            <button class="provider-tab" data-provider="neshan" id="tab-neshan">نشان</button>
+                            <button class="provider-tab" data-provider="balad" id="tab-balad">بلد</button>
+                        </div>
+                    </div>
+
+                    <!-- Search Button -->
+                    <button id="search-btn" class="btn-search">
+                        <span class="search-spinner" id="search-spinner"></span>
+                        <span id="search-btn-text">🔍 جستجو در این منطقه</span>
+                    </button>
+                </section>
+
+                <!-- Advanced Filters Section -->
+                <section class="control-card">
+                    <h2 class="section-title" id="filter-title">
+                        <span class="section-icon">⚙️</span>
+                        <span id="filter-label">فیلترهای پیشرفته</span>
+                    </h2>
+
+                    <!-- Text filter -->
+                    <div class="search-box">
+                        <input type="text" id="text-filter-input" placeholder="فیلتر در نتایج..." autocomplete="off">
+                        <span class="search-icon" id="filter-icon">🔎</span>
+                    </div>
+
+                    <!-- Rating filter -->
                     <div class="rating-filter">
                         <span class="filter-label" id="rating-label">حداقل امتیاز:</span>
                         <div class="stars-select">
-                            <button class="star-btn" data-rating="1">★</button>
-                            <button class="star-btn" data-rating="2">★</button>
-                            <button class="star-btn" data-rating="3">★</button>
-                            <button class="star-btn" data-rating="4">★</button>
-                            <button class="star-btn" data-rating="5">★</button>
+                            <button class="star-btn" data-rating="1" id="star-1">★</button>
+                            <button class="star-btn" data-rating="2" id="star-2">★</button>
+                            <button class="star-btn" data-rating="3" id="star-3">★</button>
+                            <button class="star-btn" data-rating="4" id="star-4">★</button>
+                            <button class="star-btn" data-rating="5" id="star-5">★</button>
                         </div>
-                        <button id="clear-filters-btn" class="clear-btn">پاک کردن فیلترها</button>
                     </div>
 
-                    <!-- Map Bounds Toggle -->
-                    <div class="bounds-filter">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="bounds-toggle">
-                            <span class="slider"></span>
-                        </label>
-                        <span id="map-bounds-label" class="filter-label-text">جستجو فقط در محدوده نقشه</span>
+                    <!-- Has fields filters -->
+                    <div class="field-filters" id="field-filters-section">
+                        <span class="filter-label" id="has-fields-label">فقط با:</span>
+                        <div class="field-chips">
+                            <label class="field-chip" id="has-phone-label">
+                                <input type="checkbox" id="has-phone">
+                                <span>📞 تلفن</span>
+                            </label>
+                            <label class="field-chip" id="has-website-label">
+                                <input type="checkbox" id="has-website">
+                                <span>🌐 وب‌سایت</span>
+                            </label>
+                            <label class="field-chip" id="has-email-label">
+                                <input type="checkbox" id="has-email">
+                                <span>✉️ ایمیل</span>
+                            </label>
+                            <label class="field-chip" id="has-hours-label">
+                                <input type="checkbox" id="has-hours">
+                                <span>⏰ ساعات</span>
+                            </label>
+                        </div>
                     </div>
 
-                    <!-- Search Radius Selector -->
-                    <div class="radius-filter">
-                        <span id="radius-label-select" class="filter-label">شعاع جستجو:</span>
-                        <select id="radius-select" class="radius-dropdown">
-                            <option value="unlimited" id="opt-radius-unlimited" selected>نامحدود</option>
-                            <option value="1000">۱ کیلومتر</option>
-                            <option value="3000">۳ کیلومتر</option>
-                            <option value="5000">۵ کیلومتر</option>
-                            <option value="10000">۱۰ کیلومتر</option>
+                    <!-- Radius + Bounds -->
+                    <div class="geo-filters">
+                        <div class="radius-filter">
+                            <span id="radius-label-select" class="filter-label">شعاع:</span>
+                            <select id="radius-select" class="radius-dropdown">
+                                <option value="unlimited" id="opt-radius-unlimited">نامحدود</option>
+                                <option value="500">۵۰۰ متر</option>
+                                <option value="1000">۱ کیلومتر</option>
+                                <option value="3000">۳ کیلومتر</option>
+                                <option value="5000">۵ کیلومتر</option>
+                                <option value="10000">۱۰ کیلومتر</option>
+                            </select>
+                        </div>
+                        <div class="bounds-filter">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="bounds-toggle">
+                                <span class="slider"></span>
+                            </label>
+                            <span id="map-bounds-label" class="filter-label-text">محدوده نقشه</span>
+                        </div>
+                    </div>
+
+                    <!-- Sort -->
+                    <div class="sort-row">
+                        <span class="filter-label" id="sort-label">مرتب‌سازی:</span>
+                        <select id="sort-select" class="radius-dropdown">
+                            <option value="default" id="sort-default">پیش‌فرض</option>
+                            <option value="name" id="sort-name">نام</option>
+                            <option value="rating-desc" id="sort-rating">بیشترین امتیاز</option>
+                            <option value="distance" id="sort-distance">نزدیک‌ترین</option>
                         </select>
                     </div>
+
+                    <button id="clear-filters-btn" class="btn-clear">
+                        <span id="clear-filters-text">🗑️ پاک کردن فیلترها</span>
+                    </button>
                 </section>
-                
-                <!-- Results List Section -->
+
+                <!-- Results Section -->
                 <section class="control-card results-section">
                     <div class="results-header">
-                        <h2 class="section-title" id="results-title">نتایج جستجو</h2>
-                        <span id="results-count" class="badge">۰ نتیجه</span>
+                        <h2 class="section-title" id="results-title">
+                            <span class="section-icon">📊</span>
+                            <span id="results-label">نتایج</span>
+                        </h2>
+                        <span id="results-count" class="badge">۰</span>
                     </div>
+
+                    <!-- Export Actions -->
                     <div class="export-actions">
-                        <button id="export-csv-btn" class="export-btn">خروجی CSV</button>
-                        <button id="export-json-btn" class="export-btn">خروجی JSON</button>
+                        <button id="export-csv-btn" class="export-btn csv-btn">
+                            <span>📥</span> <span id="export-csv-text">خروجی CSV</span>
+                        </button>
+                        <button id="export-json-btn" class="export-btn json-btn">
+                            <span>📄</span> <span id="export-json-text">خروجی JSON</span>
+                        </button>
                     </div>
+
+                    <!-- Select All -->
+                    <div class="select-all-row" id="select-all-row">
+                        <label class="select-all-label">
+                            <input type="checkbox" id="select-all-checkbox">
+                            <span id="select-all-text">انتخاب همه</span>
+                        </label>
+                        <span id="selected-count-text" class="selected-count"></span>
+                    </div>
+
                     <div id="business-list" class="business-list">
-                        <!-- Business items will be dynamically injected here -->
+                        <!-- Injected dynamically -->
                     </div>
                 </section>
+
             </div>
-            
+
             <footer class="sidebar-footer">
-                <p id="footer-text">نسخه دمو بومی‌سازی خدمات نقشه ایران</p>
+                <div class="footer-row">
+                    <span id="footer-text" class="footer-copy">BizFinder Pro — داده از OpenStreetMap</span>
+                </div>
+                <div class="map-coords-footer">
+                    <span id="coordinates-display" class="coordinates-display">۳۵.۶۹۹۷° N, ۵۱.۳۳۸۰° E</span>
+                </div>
             </footer>
         </aside>
-        
+
         <!-- Main Map Area -->
         <main class="map-area">
-            <!-- Floating Map Status Bar -->
-            <div class="map-status-overlay">
+            <!-- Floating Status Bar -->
+            <div class="map-status-overlay" id="map-status-overlay">
                 <div class="status-indicator">
-                    <span class="status-dot green"></span>
-                    <span id="status-text">موتور نقشه فعال: Google Maps</span>
+                    <span class="status-dot green" id="status-dot"></span>
+                    <span id="status-text">آماده جستجو</span>
                 </div>
-                <div id="coordinates-display" class="coordinates-display">
-                    ۳۵.۶۹۹۷° N, ۵۱.۳۳۸۰° E
-                </div>
+                <div class="map-zoom-info" id="map-zoom-info">zoom: 12</div>
             </div>
-            
+
+            <!-- Search Hint -->
+            <div class="map-hint" id="map-hint">
+                <span>🗺️</span>
+                <span id="map-hint-text">نقشه را به منطقه مورد نظر ببرید، سپس دکمه جستجو را بزنید</span>
+            </div>
+
             <div id="map" class="map-container"></div>
         </main>
     </div>
-    
-    <!-- Leaflet.js JavaScript -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    
-    <!-- Application Logic -->
+
+    <!-- Leaflet.js (local) -->
+    <script src="leaflet.js"></script>
+
+    <!-- App Logic -->
     <script src="app.js"></script>
 </body>
 </html>
