@@ -105,7 +105,7 @@ def run_tests():
         time.sleep(0.5)
         
         # Search "کافه"
-        page.fill("#search-input", "کافه")
+        page.fill("#text-filter-input", "کافه")
         time.sleep(0.5) # Wait for filtering in DOM
         
         # Click the first business-item in results list
@@ -119,7 +119,7 @@ def run_tests():
         # --- TEST 6: Map Bounds Filtering ---
         print("[TEST 6] Testing Map Bounds Filtering...")
         # Clear search input first
-        page.fill("#search-input", "")
+        page.fill("#text-filter-input", "")
         time.sleep(0.5)
         
         # Get count of all businesses

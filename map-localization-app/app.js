@@ -179,6 +179,10 @@ var mapMarkers   = [];
 var allBiz       = [];
 var filteredBiz  = [];
 var checkedIds   = {};      // id → true/false (plain object, no Set)
+var isLive       = false;   // Track if we have fetched live data from Overpass
+var activeProvider = "google"; // Track active map provider for status display
+var currentStatusType = "ready";
+var currentStatusCount = 0;
 
 var fText    = "";
 var fRating  = 0;
@@ -232,11 +236,71 @@ function checkedCount() {
   return n;
 }
 
+var MOCK_DATA = [
+  { id: 1,  name: { fa: "رستوران سنتی نایب (تجریش)", en: "Nayeb Traditional Restaurant (Tajrish)" }, category: "restaurant", rating: 4.5, phone: "021-22712679", address: { fa: "تهران، میدان تجریش، خیابان شهرداری", en: "Shahrdari St, Tajrish Square, Tehran" }, coords: [35.8073, 51.4283] },
+  { id: 2,  name: { fa: "کافه اسپرسو (برج میلاد)", en: "Espresso Cafe (Milad Tower)" }, category: "cafe", rating: 4.8, phone: "021-88620310", address: { fa: "تهران، بزرگراه همت، ورودی برج میلاد", en: "Milad Tower Entrance, Hemmat Expressway, Tehran" }, coords: [35.7448, 51.3753] },
+  { id: 3,  name: { fa: "بیمارستان فوق تخصصی میلاد", en: "Milad Specialty Hospital" }, category: "hospital", rating: 4.2, phone: "021-88062000", address: { fa: "تهران، بزرگراه همت، خروجی اختصاصی بیمارستان میلاد", en: "Milad Hospital Exit, Hemmat Expressway, Tehran" }, coords: [35.7483, 51.3693] },
+  { id: 4,  name: { fa: "رستوران لوکس دیوان (فرشته)", en: "Divan Luxury Restaurant (Fereshteh)" }, category: "restaurant", rating: 4.7, phone: "021-26201320", address: { fa: "تهران، خیابان فرشته، مرکز خرید سام سنتر", en: "Sam Center Mall, Fereshteh St, Tehran" }, coords: [35.7958, 51.4215] },
+  { id: 5,  name: { fa: "سام کافه (مرکز خرید سنا)", en: "Sam Cafe (Sana Mall)" }, category: "cafe", rating: 4.6, phone: "021-22709270", address: { fa: "تهران، بلوار اندرزگو، مرکز خرید سنا، طبقه اول", en: "1st Floor, Sana Shopping Center, Andarzgoo Blvd, Tehran" }, coords: [35.7981, 51.4325] },
+  { id: 6,  name: { fa: "بیمارستان و مرکز پزشکی گاندی", en: "Gandhi Hospital & Medical Center" }, category: "hospital", rating: 4.0, phone: "021-88191000", address: { fa: "تهران، خیابان گاندی، نبش کوچه ترابنده", en: "Corner of Tarabandeh St, Gandhi St, Tehran" }, coords: [35.7533, 51.4110] },
+  { id: 7,  name: { fa: "رستوران شاندیز جردن (گلستان)", en: "Shandiz Jordan Restaurant (Golestan)" }, category: "restaurant", rating: 4.4, phone: "021-22054848", address: { fa: "تهران، بلوار آفریقا (جردن)، خیابان گلستان", en: "Golestan St, Africa Blvd (Jordan), Tehran" }, coords: [35.7820, 51.4200] },
+  { id: 8,  name: { fa: "کافه دنچ ونک", en: "Cozy Vanak Cafe" }, category: "cafe", rating: 3.9, phone: "021-88775533", address: { fa: "تهران، میدان ونک، خیابان ملاصدرا", en: "Mollasadra St, Vanak Square, Tehran" }, coords: [35.7570, 51.4080] },
+  { id: 9,  name: { fa: "رستوران سنتی آزادی (غرب)", en: "Azadi Traditional Restaurant (West)" }, category: "restaurant", rating: 4.3, phone: "021-44001122", address: { fa: "تهران، میدان آزادی، ابتدای بزرگراه جناح", en: "Jenah Expressway, Azadi Square, Tehran" }, coords: [35.6997, 51.3380] },
+  { id: 10, name: { fa: "کافه چیتگر (بام لند)", en: "Chitgar Cafe (Bam Land)" }, category: "cafe", rating: 4.7, phone: "021-40223300", address: { fa: "تهران، بزرگراه همت غرب، دریاچه چیتگر، مجتمع تجاری بام لند", en: "Bam Land Mall, Chitgar Lake, Hemmat West Expressway, Tehran" }, coords: [35.7508, 51.2185] },
+  { id: 11, name: { fa: "بیمارستان فوق تخصصی لاله", en: "Laleh Specialty Hospital" }, category: "hospital", rating: 4.1, phone: "021-88571065", address: { fa: "تهران، شهرک غرب، فاز ۵، خیابان سیمای ایران", en: "Simay-e-Iran St, Phase 5, Shahrak-e Gharb, Tehran" }, coords: [35.7610, 51.3732] },
+  { id: 12, name: { fa: "کافه ویونا (سعادت‌آباد)", en: "Viuna Cafe (Sa'adat Abad)" }, category: "cafe", rating: 4.2, phone: "021-22067890", address: { fa: "تهران، سعادت‌آباد، میدان کاج، خیابان سرو شرقی", en: "Sarv-e Sharqi St, Kaj Square, Sa'adat Abad, Tehran" }, coords: [35.7876, 51.3688] },
+  { id: 13, name: { fa: "رستوران کاخ نیاوران", en: "Niavaran Palace Restaurant" }, category: "restaurant", rating: 4.6, phone: "021-22820200", address: { fa: "تهران، انتهای خیابان پاسداران، پارک نیاوران", en: "Niavaran Park, Pasdaran St, Tehran" }, coords: [35.8115, 51.4695] },
+  { id: 14, name: { fa: "کافه لمیز (پاسداران)", en: "Lamiz Cafe (Pasdaran)" }, category: "cafe", rating: 4.5, phone: "021-22584512", address: { fa: "تهران، خیابان پاسداران، نبش گلستان چهارم", en: "Corner of 4th Golestan, Pasdaran St, Tehran" }, coords: [35.7725, 51.4600] },
+  { id: 15, name: { fa: "بیمارستان تهرانپارس", en: "Tehranpars Hospital" }, category: "hospital", rating: 3.8, phone: "021-77884690", address: { fa: "تهران، تهرانپارس، فلکه سوم، خیابان ۱۹۶ غربی", en: "196th West St, 3rd Square, Tehranpars, Tehran" }, coords: [35.7335, 51.5218] },
+  { id: 16, name: { fa: "کافه رستوران هفت حوض (نارمک)", en: "Haft Hoz Cafe (Narmak)" }, category: "cafe", rating: 4.1, phone: "021-77945533", address: { fa: "تهران، نارمک، ضلع جنوبی میدان هفت حوض", en: "South side of Haft Hoz Square, Narmak, Tehran" }, coords: [35.7320, 51.4920] },
+  { id: 17, name: { fa: "رستوران سنتی پیروزی", en: "Pirouzi Traditional Restaurant" }, category: "restaurant", rating: 4.0, phone: "021-33344455", address: { fa: "تهران، خیابان پیروزی، صد دستگاه، نبش خیابان نبرد", en: "Corner of Nabard St, Pirouzi St, Tehran" }, coords: [35.6880, 51.4880] },
+  { id: 18, name: { fa: "بیمارستان فیروزآبادی (شهر ری)", en: "Firouzabadi Hospital (Shahr-e Rey)" }, category: "hospital", rating: 3.7, phone: "021-55902045", address: { fa: "تهران، شهر ری، خیابان فداییان اسلام، میدان بسیج", en: "Basij Square, Fadaeian-e Islam St, Shahr-e Rey, Tehran" }, coords: [35.5900, 51.4350] },
+  { id: 19, name: { fa: "فست فود نازی‌آباد", en: "Nazi Abad Fast Food" }, category: "restaurant", rating: 4.4, phone: "021-55061234", address: { fa: "تهران، نازی‌آباد، خیابان بازار دوم، پلاک ۸۸", en: "No 88, Bazar-e Dovom St, Nazi Abad, Tehran" }, coords: [35.6420, 51.3930] },
+  { id: 20, name: { fa: "چلوکبابی رفتاری (بازار بزرگ)", en: "Raftari Restaurant (Grand Bazaar)" }, category: "restaurant", rating: 4.6, phone: "021-55611122", address: { fa: "تهران، بازار بزرگ، بازار کفاش‌ها، کوچه مهناز", en: "Mahnaz Alley, Shoe Bazaar, Grand Bazaar, Tehran" }, coords: [35.6780, 51.4180] },
+  { id: 21, name: { fa: "کافه کتاب انقلاب", en: "Enghelab Book Cafe" }, category: "cafe", rating: 4.6, phone: "021-66487799", address: { fa: "تهران، میدان انقلاب، خیابان ۱۲ فروردین، بن‌بست نور", en: "Noor Cul-de-sac, 12 Farvardin St, Enghelab Square, Tehran" }, coords: [35.7010, 51.3910] },
+  { id: 22, name: { fa: "بیمارستان فوق تخصصی قلب جماران", en: "Jamaran Heart Hospital" }, category: "hospital", rating: 4.3, phone: "021-22290292", address: { fa: "تهران، نیاوران، جماران، خیابان حسنی‌کیا", en: "Hasnikia St, Jamaran, Niavaran, Tehran" }, coords: [35.8155, 51.4550] },
+  { id: 23, name: { fa: "کافه بهار (هفت تیر)", en: "Bahar Cafe (Haft-e Tir)" }, category: "cafe", rating: 4.0, phone: "021-88820033", address: { fa: "تهران، میدان هفت تیر، خیابان بهار شیراز", en: "Bahar Shiraz St, Haft-e Tir Square, Tehran" }, coords: [35.7155, 51.4260] },
+  { id: 24, name: { fa: "بیمارستان شریعتی", en: "Shariati University Hospital" }, category: "hospital", rating: 3.9, phone: "021-84901000", address: { fa: "تهران، بزرگراه جلال آل احمد، روبروی کوی دانشگاه", en: "Jalal Al-Ahmad Expressway, Tehran" }, coords: [35.7280, 51.3900] },
+  { id: 25, name: { fa: "بیمارستان شهدای تجریش", en: "Shohada-ye Tajrish Hospital" }, category: "hospital", rating: 3.6, phone: "021-22718001", address: { fa: "تهران، میدان تجریش، خیابان شهرداری، پلاک ۳", en: "No 3, Shahrdari St, Tajrish Square, Tehran" }, coords: [35.8080, 51.4290] },
+  { id: 26, name: { fa: "کافه باغ ولنجک", en: "Velenjak Garden Cafe" }, category: "cafe", rating: 4.7, phone: "021-22409010", address: { fa: "تهران، ولنجک، انتهای خیابان یمن، باغ ایرانی", en: "Iranian Garden, Yemen St, Velenjak, Tehran" }, coords: [35.8060, 51.3980] },
+  { id: 27, name: { fa: "رستوران باغ قصر یخ", en: "Ice Palace Garden Restaurant" }, category: "restaurant", rating: 4.2, phone: "021-22880099", address: { fa: "تهران، خیابان شریعتی، بالاتر از پل سیدخندان", en: "Shariati St, above Seyed Khandan Bridge, Tehran" }, coords: [35.7650, 51.4420] },
+  { id: 28, name: { fa: "کافه دیدار (شرق)", en: "Didar Cafe (East)" }, category: "cafe", rating: 4.1, phone: "021-77889900", address: { fa: "تهران، بزرگراه رسالت، بعد از اتوبان باقری", en: "Resalat Expressway, past Bagheri Highway, Tehran" }, coords: [35.7180, 51.4780] },
+  { id: 29, name: { fa: "درمانگاه شبانه‌روزی ترمینال جنوب", en: "South Terminal 24/7 Clinic" }, category: "hospital", rating: 3.5, phone: "021-55185390", address: { fa: "تهران، بزرگراه بعثت، ترمینال مسافربری جنوب", en: "South Passenger Terminal, Be'sat Expressway, Tehran" }, coords: [35.6580, 51.4100] },
+  { id: 30, name: { fa: "رستوران پارک غربی (چیتگر)", en: "West Park Restaurant (Chitgar)" }, category: "restaurant", rating: 4.4, phone: "021-44705050", address: { fa: "تهران، آزادراه تهران-کرج، ورودی پارک جنگلی چیتگر", en: "Chitgar Forest Park Entrance, Tehran-Karaj Freeway, Tehran" }, coords: [35.7320, 51.2720] }
+];
+
+function loadMockData() {
+  var out = [];
+  var mc = map ? map.getCenter() : { lat: 35.6997, lng: 51.3380 };
+  for (var i = 0; i < MOCK_DATA.length; i++) {
+    var b = MOCK_DATA[i];
+    out.push({
+      id:       b.id,
+      osmId:    "node/" + (1000000 + b.id),
+      name:     currentLang === "fa" ? b.name.fa : b.name.en,
+      category: b.category,
+      rating:   b.rating,
+      phone:    b.phone,
+      website:  "",
+      email:    "",
+      address:  currentLang === "fa" ? b.address.fa : b.address.en,
+      hours:    "",
+      coords:   b.coords,
+      distance: distM(mc.lat, mc.lng, b.coords[0], b.coords[1]),
+    });
+  }
+  allBiz = out;
+}
+
 // ─── Language ────────────────────────────────────────────────
 function setLang(lang) {
   currentLang = lang;
   document.documentElement.lang = lang;
   document.documentElement.dir  = lang === "fa" ? "rtl" : "ltr";
+
+  if (!isLive) {
+    loadMockData();
+  }
 
   setText("page-title",          T("pageTitle"));
   setText("app-heading",         T("appHeading"));
@@ -296,7 +360,7 @@ function setLang(lang) {
   }
 
   applyFilters();
-  setStatus("ready", 0);
+  updateStatusText();
 }
 
 // ─── Map Init ────────────────────────────────────────────────
@@ -334,6 +398,8 @@ function switchTiles(key) {
   try {
     if (tileLayer) { map.removeLayer(tileLayer); tileLayer = null; }
     tileLayer = L.tileLayer(p.url, p.opts).addTo(map);
+    activeProvider = key;
+    updateStatusText();
   } catch(e) {
     console.error("Tile layer error:", e);
   }
@@ -386,6 +452,7 @@ function doSearch() {
     return res.json();
   })
   .then(function(data) {
+    isLive     = true;
     allBiz     = parseResults(data.elements || [], center);
     checkedIds = {};
     var cbEl   = el("select-all-checkbox");
@@ -601,12 +668,13 @@ function makeCard(biz) {
   if (cpEl) {
     cpEl.addEventListener("click", function(e) {
       e.stopPropagation();
-      var val = e.currentTarget.getAttribute("data-copy");
+      var self = this;
+      var val = self.getAttribute("data-copy");
       if (navigator.clipboard) {
         navigator.clipboard.writeText(val).then(function() {
-          var orig = e.currentTarget.textContent;
-          e.currentTarget.textContent = T("copied");
-          setTimeout(function() { e.currentTarget.textContent = orig; }, 1500);
+          var orig = self.textContent;
+          self.textContent = T("copied");
+          setTimeout(function() { self.textContent = orig; }, 1500);
         }).catch(function() {});
       }
     });
@@ -715,15 +783,31 @@ function syncSelectAll() {
   cb.indeterminate = !allChk && someChk;
 }
 
+var currentStatusType = "ready";
+var currentStatusCount = 0;
+
+function updateStatusText() {
+  setStatus(currentStatusType, currentStatusCount);
+}
+
 function setStatus(type, n) {
   var dot  = el("status-dot");
   var text = el("status-text");
   if (!dot || !text) { return; }
   dot.className = "status-dot";
-  if (type === "ready")     { dot.classList.add("green"); text.textContent = T("statusReady"); }
-  if (type === "searching") { dot.classList.add("amber"); text.textContent = T("statusSearching"); }
-  if (type === "done")      { dot.classList.add("green"); text.textContent = n + " " + T("statusDone"); }
-  if (type === "error")     { dot.classList.add("red");   text.textContent = T("statusError"); }
+  currentStatusType = type;
+  currentStatusCount = n;
+
+  var mapName = "";
+  if (activeProvider === "google")       { mapName = "Google Maps"; }
+  else if (activeProvider === "neshan") { mapName = "Neshan Map"; }
+  else if (activeProvider === "balad")  { mapName = "Balad Map"; }
+  var suffix = " (" + mapName + ")";
+
+  if (type === "ready")     { dot.classList.add("green"); text.textContent = T("statusReady") + suffix; }
+  if (type === "searching") { dot.classList.add("amber"); text.textContent = T("statusSearching") + suffix; }
+  if (type === "done")      { dot.classList.add("green"); text.textContent = n + " " + T("statusDone") + suffix; }
+  if (type === "error")     { dot.classList.add("red");   text.textContent = T("statusError") + suffix; }
 }
 
 function setSearchBtnState(on) {
@@ -836,11 +920,11 @@ function setupEvents() {
   // Provider tabs
   var tabs = document.querySelectorAll(".provider-tab");
   for (var ti = 0; ti < tabs.length; ti++) {
-    tabs[ti].addEventListener("click", function(e) {
+    tabs[ti].addEventListener("click", function() {
       var allTabs = document.querySelectorAll(".provider-tab");
       for (var k = 0; k < allTabs.length; k++) { allTabs[k].classList.remove("active"); }
-      e.currentTarget.classList.add("active");
-      switchTiles(e.currentTarget.getAttribute("data-provider"));
+      this.classList.add("active");
+      switchTiles(this.getAttribute("data-provider"));
     });
   }
 
@@ -855,11 +939,11 @@ function setupEvents() {
   // Category chips
   var chipEls = document.querySelectorAll(".chip");
   for (var ci2 = 0; ci2 < chipEls.length; ci2++) {
-    chipEls[ci2].addEventListener("click", function(e) {
+    chipEls[ci2].addEventListener("click", function() {
       var allChips = document.querySelectorAll(".chip");
       for (var c = 0; c < allChips.length; c++) { allChips[c].classList.remove("active"); }
-      e.currentTarget.classList.add("active");
-      activeOsm = e.currentTarget.getAttribute("data-osm");
+      this.classList.add("active");
+      activeOsm = this.getAttribute("data-osm");
       var kwEl2 = el("keyword-input");
       if (kwEl2) { kwEl2.value = ""; }
     });
@@ -872,8 +956,8 @@ function setupEvents() {
   // Stars
   var starBtns = document.querySelectorAll(".star-btn");
   for (var si = 0; si < starBtns.length; si++) {
-    starBtns[si].addEventListener("mouseenter", function(e) {
-      var v = parseInt(e.currentTarget.getAttribute("data-rating"));
+    starBtns[si].addEventListener("mouseenter", function() {
+      var v = parseInt(this.getAttribute("data-rating"));
       var sbs = document.querySelectorAll(".star-btn");
       for (var s = 0; s < sbs.length; s++) { sbs[s].classList.toggle("highlight", parseInt(sbs[s].getAttribute("data-rating")) <= v); }
     });
@@ -881,8 +965,8 @@ function setupEvents() {
       var sbs = document.querySelectorAll(".star-btn");
       for (var s = 0; s < sbs.length; s++) { sbs[s].classList.remove("highlight"); }
     });
-    starBtns[si].addEventListener("click", function(e) {
-      var v = parseInt(e.currentTarget.getAttribute("data-rating"));
+    starBtns[si].addEventListener("click", function() {
+      var v = parseInt(this.getAttribute("data-rating"));
       if (fRating === v) { fRating = 0; }
       else               { fRating = v; }
       var sbs = document.querySelectorAll(".star-btn");
@@ -971,8 +1055,8 @@ function setupEvents() {
   // Modal download CSV
   var mdcEl = el("modal-download-csv");
   if (mdcEl) {
-    mdcEl.addEventListener("click", function(e) {
-      var data = e.currentTarget._exportData || getExportData();
+    mdcEl.addEventListener("click", function() {
+      var data = this._exportData || getExportData();
       triggerDownload(new Blob([buildCSV(data)],{type:"text/csv;charset=utf-8"}), "bizfinder_" + Date.now() + ".csv");
       closeModal();
     });
@@ -981,8 +1065,8 @@ function setupEvents() {
   // Modal download JSON
   var mdjEl = el("modal-download-json");
   if (mdjEl) {
-    mdjEl.addEventListener("click", function(e) {
-      var data = e.currentTarget._exportData || getExportData();
+    mdjEl.addEventListener("click", function() {
+      var data = this._exportData || getExportData();
       var json = data.map(function(b) {
         return { id:b.id, name:b.name, category:b.category, phone:b.phone, website:b.website, email:b.email, address:b.address, latitude:b.coords[0], longitude:b.coords[1] };
       });
@@ -1000,6 +1084,4 @@ window.addEventListener("DOMContentLoaded", function() {
   initMap();
   setupEvents();
   setLang("fa");
-  setStatus("ready", 0);
-  renderList([]);
 });
